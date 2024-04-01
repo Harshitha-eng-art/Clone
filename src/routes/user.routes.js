@@ -1,11 +1,51 @@
+// import { Router} from "express";
+// import { registerUser} from "../controllers/user.controllers.js";
+// import { upload } from "../middlewares/multer.middleware.js";
+
+// const router=Router()
+
+
+
+// router.route("/register").post(
+//     upload.fields([
+//      {
+//         name:"avatar",
+//         maxCount:1
+//      },
+//      {
+//         name:"coverImage",
+//         maxCount:1
+//      }
+//     ]),
+//     registerUser)
+
+
+// export default router
+
 import { Router} from "express";
 import { registerUser} from "../controllers/user.controllers.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
-const router=Router()
+const router = Router();
+
+router.route("/register").post(
+    upload.fields([
+        {
+            name: "avatar",
+            maxCount: 1
+        },
+        {
+            name: "coverImage",
+            maxCount: 1
+        }
+    ]),
+    (req, res, next) => {
+        console.log("Files uploaded:", req.files); // Inspect req.files object
+        next(); // Pass control to the next middleware
+    },
+    registerUser
+);
+
+export default router;
 
 
-
-router.route("/register").post(registerUser)
-
-
-export default router

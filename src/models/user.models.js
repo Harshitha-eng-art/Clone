@@ -1,9 +1,9 @@
 import mongoose from 'mongoose'
 import jsw from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import { asyncHandler } from '../utils/asyncHandler'
-
-const userSchema=new mongoose.Schema({
+import { asyncHandler } from '../utils/asyncHandler.js'
+const { Schema } = mongoose;
+const userSchema=new Schema({
     username:
     {
         type:String,
@@ -34,6 +34,11 @@ const userSchema=new mongoose.Schema({
         type:String, //cloudnary url
         required:true
     },
+    coverImage:
+    {
+        type:String //cloudnary url
+      
+    },
     watchHistory:
     [{
          type:Schema.Types.ObjectId,
@@ -46,7 +51,7 @@ const userSchema=new mongoose.Schema({
     },
     refreshToken:
     {
-
+         type:String
     }
 
 
@@ -55,7 +60,7 @@ const userSchema=new mongoose.Schema({
  userSchema.pre("save",async function (next)
   {
     if(!this.isModified("password")) return next();
-    this.password=bcrypt.hash(this.password,10)
+    this.password= await bcrypt.hash(this.password,10)
     next()
 
   })
@@ -98,4 +103,4 @@ const userSchema=new mongoose.Schema({
     )
   }
 
-export const User=mongoose.model("User",userSchema)
+export const User = mongoose.model("User",userSchema)
