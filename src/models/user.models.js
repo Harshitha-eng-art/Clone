@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import jsw from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { asyncHandler } from '../utils/asyncHandler.js'
 const { Schema } = mongoose;
