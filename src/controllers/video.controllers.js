@@ -10,29 +10,50 @@ import ffprobeStatic from 'ffprobe-static';
 import { exec } from 'child_process';
 import { title } from "process"
 
-const gentrateduration=async(videolocalPath)=>{
-    
-        let durationInSeconds;
-        const ffprobePath = ffprobeStatic.path;
-        exec(`${ffprobePath} -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${videolocalPath}"`, async (err, stdout, stderr) => {
-            if (err) {
-                console.error(`Error: ${err.message}`);
-                return;
-            }
-        
-            durationInSeconds = parseFloat(stdout.trim());
-            console.log(`Video duration: ${durationInSeconds} seconds`);
-        });
-        return durationInSeconds;
-        
-
-        
-    
-}
 
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
+    // Pagination calculation
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    
+    // Query construction based on the provided parameters
+    let queryConditions = {};
+    
+    if (query) {
+        // Include search query condition
+        queryConditions.title = { $regex: query, $options: "i" }; // Example: searching for videos with title containing the query string
+    }
+    
+    if (userId) {
+        // Include user ID condition
+        queryConditions.userId = userId;
+    }
+    
+    // Sorting configuration
+    let sortOptions = {};
+    
+    if (sortBy && sortType) {
+        // Include sorting options
+        sortOptions[sortBy] = sortType === 'asc' ? 1 : -1; // Example: sorting by upload date
+    }
+    
+    try {
+        // Fetch videos from the database based on constructed query conditions and sorting options
+        const videos = await Video.find(queryConditions)
+            .sort(sortOptions)
+            .limit(limit)
+            .skip(startIndex)
+            .exec();
+        
+        // Sending response with fetched videos
+        res.json({ success: true, videos });
+    } catch (error) {
+        // Handle errors
+        console.error(error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -51,8 +72,17 @@ const publishAVideo = asyncHandler(async (req, res) => {
     }
     
     
-    const durationInSeconds=await gentrateduration(videolocalPath)
-    
+    let durationInSeconds;
+        const ffprobePath = ffprobeStatic.path;
+        exec(`${ffprobePath} -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${videolocalPath}"`, async (err, stdout, stderr) => {
+            if (err) {
+                console.error(`Error: ${err.message}`);
+                return;
+            }
+        
+            durationInSeconds = parseFloat(stdout.trim());
+            console.log(`Video duration: ${durationInSeconds} seconds`);
+        });
     
    
       
@@ -151,20 +181,47 @@ const updateVideo = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: delete video
-    const deletevid=await Video.findById(videoId,{
-        $unset:{
-            videoId
-            
-        }
+    const deletevid=await Video.findOneAndDelete({ _id: videoId });
 
-    },{new:true})
+  
 
     res.status(200).json(new ApiResponse(200,deletevid,"video deleted successfully"))
 })
 
+
+
+// Controller to toggle the publish status of a video
 const togglePublishStatus = asyncHandler(async (req, res) => {
-    const { videoId } = req.params
-})
+    const videoId = req.params;
+
+    try {
+        // Find the video by its ID
+        const video = await Video.findById(videoId);
+
+        if (!video) {
+            return res.status(404).json({ success: false, message: "Video not found" });
+        }
+
+        if (video.isPublished) {
+            // If video is already published, unpublish it
+            video.isPublished = false;
+            await video.save();
+            res.status(200).json({ success: true, message: "Video unpublished successfully", video });
+        } else {
+            // If video is not published, publish it
+            video.isPublished = true;
+            
+            await video.save();
+            res.status(200).json({ success: true, message: "Video published successfully", video });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+});
+
+
+
 
 export {
     getAllVideos,
