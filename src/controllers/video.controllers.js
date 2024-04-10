@@ -12,49 +12,47 @@ import { title } from "process"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
-    // Pagination calculation
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    
-    // Query construction based on the provided parameters
-    let queryConditions = {};
-    
+    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+
+    // Pagination configuration
+    const options = {
+        page: parseInt(page),
+        limit: parseInt(limit)
+    };
+
+    // Aggregation pipeline stages
+    const pipeline = [];
+
+    // Match stage to filter based on query conditions
+    const matchStage = {};
     if (query) {
-        // Include search query condition
-        queryConditions.title = { $regex: query, $options: "i" }; // Example: searching for videos with title containing the query string
+        matchStage.title = { $regex: query, $options: "i" };
     }
-    
     if (userId) {
-        // Include user ID condition
-        queryConditions.userId = userId;
+        matchStage.userId = userId;
     }
-    
-    // Sorting configuration
-    let sortOptions = {};
-    
+    pipeline.push({ $match: matchStage });
+
+    // Sort stage
     if (sortBy && sortType) {
-        // Include sorting options
-        sortOptions[sortBy] = sortType === 'asc' ? 1 : -1; // Example: sorting by upload date
+        const sortField = sortBy === 'title' ? sortBy : 'createdAt'; // Adjust sorting fields as needed
+        const sortOrder = sortType === 'asc' ? 1 : -1;
+        pipeline.push({ $sort: { [sortField]: sortOrder } });
     }
-    
+
     try {
-        // Fetch videos from the database based on constructed query conditions and sorting options
-        const videos = await Video.find(queryConditions)
-            .sort(sortOptions)
-            .limit(limit)
-            .skip(startIndex)
-            .exec();
-        
+        // Execute aggregation query with pagination
+        const result = await Video.aggregate(pipeline).paginate(options);
+
         // Sending response with fetched videos
-        res.json({ success: true, videos });
+        res.json({ success: true, videos: result });
     } catch (error) {
         // Handle errors
         console.error(error);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
-})
+});
+
 
 const publishAVideo = asyncHandler(async (req, res) => {
     const { title, description} = req.body
@@ -179,16 +177,21 @@ const updateVideo = asyncHandler(async (req, res) => {
 })
 
 const deleteVideo = asyncHandler(async (req, res) => {
-    const { videoId } = req.params
-    //TODO: delete video
-    const deletevid=await Video.findOneAndDelete({ _id: videoId });
+    // Extract the video ID from the request parameters
+    const { videoId } = req.params;
 
-  
+    try {
+        // Find the video by its ID and delete it
+        const deletedVideo = await Video.findOneAndDelete({ _id: videoId });
 
-    res.status(200).json(new ApiResponse(200,deletevid,"video deleted successfully"))
-})
-
-
+        // Respond with a success message and the deleted video
+        res.status(200).json(new ApiResponse(200, deletedVideo, "Video deleted successfully"));
+    } catch (error) {
+        // Handle any unexpected errors
+        console.error(error);
+        res.status(500).json(new ApiResponse(500, {}, "Internal Server Error"));
+    }
+});
 
 // Controller to toggle the publish status of a video
 const togglePublishStatus = asyncHandler(async (req, res) => {

@@ -24,14 +24,20 @@ app.use(cookieParser())
 import userRouter from './routes/user.routes.js';
 import publishRouter from './routes/video.routes.js';
 import subscriptionRouter from './routes/subscription.routes.js'
-
-
+import commentRouter from './routes/comment.routes.js';
+import likeRouter from './routes/like.routes.js';
+import tweetRouter from './routes/tweet.routes.js'
+import playlistRouter from './routes/playlist.routes.js'
 
 
 //routes declration 
 app.use("/api/v1/users",userRouter)
 app.use("/api/v1/publish",publishRouter)
 app.use("/api/v1/subscribe",subscriptionRouter)
+app.use("/api/v1/comment",commentRouter)
+app.use("/api/v1/like",likeRouter)
+app.use("/api/v1/tweet",tweetRouter)
+app.use("/api/v1/playlist",playlistRouter)
 
 //http://localhost:8000/api/v1/users/register
 
