@@ -65,6 +65,7 @@ const uploadonCloudinary = async (localFilePath) => {
     } catch (error) {
         // Handle upload error
         console.error("Error uploading file to Cloudinary:", error.message);
+    }
 
         // Remove the locally saved temporary file if the upload operation failed
         if (localFilePath) {
@@ -77,7 +78,7 @@ const uploadonCloudinary = async (localFilePath) => {
         }
 
         return null;
-    }
+    
 };
 
 export { uploadonCloudinary };

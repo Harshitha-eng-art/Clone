@@ -20,13 +20,15 @@ const storage = multer.diskStorage({
         cb(null, './public/temp'); // Destination of the place where file should be uploaded
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname);
+        console.log(file);
+        cb(null, file.originalname)
     }
 });
 
-export const upload = multer({ storage });
+export const upload = multer({ storage ,});
 
 export default upload;
+
 
 
  

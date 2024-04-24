@@ -9,7 +9,7 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 const getChannelStats = asyncHandler(async (req, res) => {
     try {
         const channelId = req.user._id; // Assuming the channel ID is available in req.user
-
+        console.log(channelId)
         // Calculate total video views
         const totalVideoViews = await Video.aggregate([
             { $match: { owner: channelId } },
@@ -42,10 +42,12 @@ const getChannelStats = asyncHandler(async (req, res) => {
 });
 
 const getChannelVideos = asyncHandler(async (req, res) => {
-    const { channelId } = req.user._id;
+    const channelId = req.user._id; // Assuming the channel ID is available in req.user
+        console.log(channelId)
 
     // TODO: Query the database to find all videos uploaded by the specified channel
     const channelVideos = await Video.find({ owner: channelId });
+    console.log(channelVideos);
 
     if (!channelVideos) {
         return res.status(404).json({ message: "No videos found for the specified channel" });
